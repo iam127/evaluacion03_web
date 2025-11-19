@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Mesas</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="display-6 fw-bold text-dark">
+                <i class="bi bi-table me-2"></i>
+                Gestión de Mesas
+            </h1>
+            <p class="text-muted">Administra el estado de las mesas del restaurante</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a th:href="@{/mesas/nuevo}" class="btn btn-success btn-lg shadow-sm">
+                <i class="bi bi-plus-circle-fill me-2"></i>
+                Nueva Mesa
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle fs-1"></i>
+                    <h3 class="mt-2 mb-0" th:text="${totalDisponibles}">0</h3>
+                    <p class="mb-0">Disponibles</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-danger text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-x-circle fs-1"></i>
+                    <h3 class="mt-2 mb-0" th:text="${totalOcupadas}">0</h3>
+                    <p class="mb-0">Ocupadas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-clock fs-1"></i>
+                    <h3 class="mt-2 mb-0" th:text="${totalReservadas}">0</h3>
+                    <p class="mb-0">Reservadas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-secondary text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-tools fs-1"></i>
+                    <h3 class="mt-2 mb-0" th:text="${totalMantenimiento}">0</h3>
+                    <p class="mb-0">Mantenimiento</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <a th:href="@{/mesas}"
+                           class="btn btn-outline-primary"
+                           th:classappend="${estadoFiltro == null ? 'active' : ''}">
+                            <i class="bi bi-list-ul me-1"></i> Todas
+                        </a>
+                        <a th:href="@{/mesas(estado='disponible')}"
+                           class="btn btn-outline-success"
+                           th:classappend="${estadoFiltro == 'disponible' ? 'active' : ''}">
+                            <i class="bi bi-check-circle me-1"></i> Disponibles
+                        </a>
+                        <a th:href="@{/mesas(estado='ocupada')}"
+                           class="btn btn-outline-danger"
+                           th:classappend="${estadoFiltro == 'ocupada' ? 'active' : ''}">
+                            <i class="bi bi-x-circle me-1"></i> Ocupadas
+                        </a>
+                        <a th:href="@{/mesas(estado='reservada')}"
+                           class="btn btn-outline-warning"
+                           th:classappend="${estadoFiltro == 'reservada' ? 'active' : ''}">
+                            <i class="bi bi-clock me-1"></i> Reservadas
+                        </a>
+                        <a th:href="@{/mesas(estado='mantenimiento')}"
+                           class="btn btn-outline-secondary"
+                           th:classappend="${estadoFiltro == 'mantenimiento' ? 'active' : ''}">
+                            <i class="bi bi-tools me-1"></i> Mantenimiento
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Mesas -->
+    <div class="row g-4">
+        <div class="col-12" th:if="${#lists.isEmpty(mesas)}">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                    <p class="text-muted mb-0">No hay mesas registradas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-4 col-md-6" th:each="mesa : ${mesas}">
+            <div class="card border-0 shadow-sm h-100 mesa-card"
+                 th:classappend="${mesa.estado == 'DISPONIBLE' ? 'mesa-disponible' : (mesa.estado == 'OCUPADA' ? 'mesa-ocupada' : (mesa.estado == 'RESERVADA' ? 'mesa-reservada' : 'mesa-mantenimiento'))}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h3 class="mb-0 fw-bold">
+                                <i class="bi bi-table me-2"></i>
+                                Mesa <span th:text="${mesa.numero}">1</span>
+                            </h3>
+                        </div>
+                        <span class="badge fs-6"
+                              th:classappend="${mesa.estado == 'DISPONIBLE' ? 'bg-success' : (mesa.estado == 'OCUPADA' ? 'bg-danger' : (mesa.estado == 'RESERVADA' ? 'bg-warning' : 'bg-secondary'))}"
+                              th:text="${mesa.estado}">
+                Estado
+            </span>
+                    </div>
+
+                    <div class="mb-3">
+                        <i class="bi bi-people text-muted me-2"></i>
+                        <span class="text-muted">Capacidad: </span>
+                        <span class="fw-semibold" th:text="${mesa.capacidad} + ' personas'">4 personas</span>
+                    </div>
+
+                    <!-- Acciones Rápidas -->
+                    <div class="btn-group w-100 mb-2" role="group">
+                        <a th:if="${mesa.estado == 'DISPONIBLE'}"
+                           th:href="@{/mesas/ocupar/{id}(id=${mesa.idMesa})}"
+                           class="btn btn-sm btn-danger"
+                           onclick="return confirm('¿Ocupar esta mesa?')">
+                            <i class="bi bi-x-circle"></i> Ocupar
+                        </a>
+
+                        <a th:if="${mesa.estado == 'OCUPADA'}"
+                           th:href="@{/mesas/liberar/{id}(id=${mesa.idMesa})}"
+                           class="btn btn-sm btn-success"
+                           onclick="return confirm('¿Liberar esta mesa?')">
+                            <i class="bi bi-check-circle"></i> Liberar
+                        </a>
+
+                        <a th:if="${mesa.estado == 'DISPONIBLE'}"
+                           th:href="@{/mesas/reservar/{id}(id=${mesa.idMesa})}"
+                           class="btn btn-sm btn-warning"
+                           onclick="return confirm('¿Reservar esta mesa?')">
+                            <i class="bi bi-clock"></i> Reservar
+                        </a>
+                    </div>
+
+                    <!-- Acciones de Edición -->
+                    <div class="btn-group w-100" role="group">
+                        <a th:href="@{/mesas/editar/{id}(id=${mesa.idMesa})}"
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a th:href="@{/mesas/eliminar/{id}(id=${mesa.idMesa})}"
+                           class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('¿Está seguro de eliminar esta mesa?')">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

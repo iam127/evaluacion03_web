@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${titulo}">Formulario Mesa</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/mesas}" class="text-decoration-none">
+                            <i class="bi bi-table"></i> Mesas
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" th:text="${titulo}">Formulario</li>
+                </ol>
+            </nav>
+            <h1 class="display-6 fw-bold text-dark" th:text="${titulo}">
+                Formulario de Mesa
+            </h1>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table me-2"></i>
+                        Información de la Mesa
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/mesas/guardar}"
+                          th:object="${mesa}"
+                          method="post">
+
+                        <!-- ID oculto -->
+                        <input type="hidden" th:field="*{idMesa}">
+
+                        <div class="row">
+                            <!-- Número de Mesa -->
+                            <div class="col-md-6 mb-4">
+                                <label for="numero" class="form-label fw-semibold">
+                                    <i class="bi bi-hash text-success me-1"></i>
+                                    Número de Mesa <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       id="numero"
+                                       class="form-control form-control-lg"
+                                       th:field="*{numero}"
+                                       th:classappend="${#fields.hasErrors('numero')} ? 'is-invalid' : ''"
+                                       placeholder="Ej: 1"
+                                       min="1"
+                                       required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}">
+                                    Error en Número
+                                </div>
+                                <small class="form-text text-muted">Debe ser un número único</small>
+                            </div>
+
+                            <!-- Capacidad -->
+                            <div class="col-md-6 mb-4">
+                                <label for="capacidad" class="form-label fw-semibold">
+                                    <i class="bi bi-people text-success me-1"></i>
+                                    Capacidad <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       id="capacidad"
+                                       class="form-control form-control-lg"
+                                       th:field="*{capacidad}"
+                                       th:classappend="${#fields.hasErrors('capacidad')} ? 'is-invalid' : ''"
+                                       placeholder="Ej: 4"
+                                       min="1"
+                                       max="20"
+                                       required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('capacidad')}" th:errors="*{capacidad}">
+                                    Error en Capacidad
+                                </div>
+                                <small class="form-text text-muted">Número de personas (1-20)</small>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <label for="estado" class="form-label fw-semibold">
+                                <i class="bi bi-flag text-success me-1"></i>
+                                Estado de la Mesa <span class="text-danger">*</span>
+                            </label>
+                            <select id="estado"
+                                    class="form-select form-select-lg"
+                                    th:field="*{estado}"
+                                    th:classappend="${#fields.hasErrors('estado')} ? 'is-invalid' : ''"
+                                    required>
+                                <option value="">-- Seleccione un estado --</option>
+                                <option th:each="estado : ${estados}"
+                                        th:value="${estado}"
+                                        th:text="${estado.descripcion}">
+                                    Estado
+                                </option>
+                            </select>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('estado')}" th:errors="*{estado}">
+                                Error en Estado
+                            </div>
+                        </div>
+
+                        <!-- Información de Estados -->
+                        <div class="alert alert-info border-0" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Información sobre Estados
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li><strong>Disponible:</strong> Mesa lista para ser ocupada</li>
+                                <li><strong>Ocupada:</strong> Mesa actualmente en uso por clientes</li>
+                                <li><strong>Reservada:</strong> Mesa reservada para una hora específica</li>
+                                <li><strong>Mantenimiento:</strong> Mesa fuera de servicio temporalmente</li>
+                            </ul>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end pt-3">
+                            <a th:href="@{/mesas}" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg px-4">
+                                <i class="bi bi-save me-2"></i>
+                                Guardar Mesa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
