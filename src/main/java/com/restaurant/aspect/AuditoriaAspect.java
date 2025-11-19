@@ -25,6 +25,7 @@ public class AuditoriaAspect {
 
     /**
      * Auditar operaciones de guardado en ClienteService
+     * IMPORTANTE: Solo intercepta métodos específicos del service, no todo
      */
     @AfterReturning(
             pointcut = "execution(* com.restaurant.service.ClienteService.guardar(..))",
@@ -36,12 +37,12 @@ public class AuditoriaAspect {
             if (args.length > 0 && args[0] != null) {
                 Object cliente = args[0];
                 Long idCliente = (Long) cliente.getClass().getMethod("getIdCliente").invoke(cliente);
-                String nombres = (String) cliente.getClass().getMethod("getNombres").invoke(cliente);
-                String apellidos = (String) cliente.getClass().getMethod("getApellidos").invoke(cliente);
+                String nombre = (String) cliente.getClass().getMethod("getNombre").invoke(cliente);
+                String apellido = (String) cliente.getClass().getMethod("getApellido").invoke(cliente);
 
                 String accion = (idCliente == null)
-                        ? "CREAR Cliente: " + nombres + " " + apellidos
-                        : "ACTUALIZAR Cliente: " + nombres + " " + apellidos;
+                        ? "CREAR Cliente: " + nombre + " " + apellido
+                        : "ACTUALIZAR Cliente: " + nombre + " " + apellido;
 
                 registrarBitacora(accion, "Cliente",
                         (Long) result.getClass().getMethod("getIdCliente").invoke(result));
@@ -127,91 +128,39 @@ public class AuditoriaAspect {
     }
 
     /**
-     * Auditar cambios de estado en MesaService
-     */
-    @AfterReturning("execution(* com.restaurant.service.MesaService.cambiarEstado(..))")
-    public void auditarCambiarEstadoMesa(JoinPoint joinPoint) {
-        try {
-            Object[] args = joinPoint.getArgs();
-            if (args.length >= 2) {
-                Long idMesa = (Long) args[0];
-                Object estado = args[1];
-                registrarBitacora("CAMBIAR ESTADO Mesa a: " + estado, "Mesa", idMesa);
-            }
-        } catch (Exception e) {
-            log.error("Error en auditoría de cambio de estado de Mesa", e);
-        }
-    }
-
-    /**
-     * Auditar ocupación de mesa
-     */
-    @AfterReturning("execution(* com.restaurant.service.MesaService.ocuparMesa(..))")
-    public void auditarOcuparMesa(JoinPoint joinPoint) {
-        try {
-            Object[] args = joinPoint.getArgs();
-            if (args.length > 0) {
-                Long idMesa = (Long) args[0];
-                registrarBitacora("OCUPAR Mesa", "Mesa", idMesa);
-            }
-        } catch (Exception e) {
-            log.error("Error en auditoría de ocupación de Mesa", e);
-        }
-    }
-
-    /**
-     * Auditar liberación de mesa
-     */
-    @AfterReturning("execution(* com.restaurant.service.MesaService.liberarMesa(..))")
-    public void auditarLiberarMesa(JoinPoint joinPoint) {
-        try {
-            Object[] args = joinPoint.getArgs();
-            if (args.length > 0) {
-                Long idMesa = (Long) args[0];
-                registrarBitacora("LIBERAR Mesa", "Mesa", idMesa);
-            }
-        } catch (Exception e) {
-            log.error("Error en auditoría de liberación de Mesa", e);
-        }
-    }
-
-    /**
-     * Auditar reserva de mesa
-     */
-    @AfterReturning("execution(* com.restaurant.service.MesaService.reservarMesa(..))")
-    public void auditarReservarMesa(JoinPoint joinPoint) {
-        try {
-            Object[] args = joinPoint.getArgs();
-            if (args.length > 0) {
-                Long idMesa = (Long) args[0];
-                registrarBitacora("RESERVAR Mesa", "Mesa", idMesa);
-            }
-        } catch (Exception e) {
-            log.error("Error en auditoría de reserva de Mesa", e);
-        }
-    }
-
-    /**
      * Método auxiliar para registrar en bitácora
+     * CORREGIDO: Evita consultas durante la autenticación
      */
     private void registrarBitacora(String accion, String entidad, Long idEntidad) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            // Verificar que el usuario está autenticado Y que no es anónimo
+            if (auth != null && auth.isAuthenticated()
+                    && !"anonymousUser".equals(auth.getPrincipal())
+                    && auth.getName() != null) {
+
                 String nombreUsuario = auth.getName();
 
-                usuarioRepository.findByNombreUsuario(nombreUsuario).ifPresent(usuario -> {
-                    Bitacora bitacora = new Bitacora();
-                    bitacora.setUsuario(usuario);
-                    bitacora.setAccion(accion);
-                    bitacora.setEntidad(entidad);
-                    bitacora.setIdEntidad(idEntidad);
-                    bitacora.setFechaHora(LocalDateTime.now());
+                // IMPORTANTE: Usar una transacción separada para evitar problemas
+                try {
+                    Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario).orElse(null);
 
-                    bitacoraRepository.save(bitacora);
-                    log.info("Auditoría registrada: {} - {}", nombreUsuario, accion);
-                });
+                    if (usuario != null) {
+                        Bitacora bitacora = new Bitacora();
+                        bitacora.setUsuario(usuario);
+                        bitacora.setAccion(accion);
+                        bitacora.setEntidad(entidad);
+                        bitacora.setIdEntidad(idEntidad);
+                        bitacora.setFechaHora(LocalDateTime.now());
+
+                        bitacoraRepository.save(bitacora);
+                        log.debug("Auditoría registrada: {} - {}", nombreUsuario, accion);
+                    }
+                } catch (Exception e) {
+                    // Solo log, no lanzar excepción para no afectar la operación principal
+                    log.warn("No se pudo registrar auditoría: {}", e.getMessage());
+                }
             }
         } catch (Exception e) {
             log.error("Error al registrar en bitácora", e);

@@ -1,7 +1,6 @@
 package com.restaurant.repository;
 
 import com.restaurant.model.Mesa;
-import com.restaurant.model.Mesa.EstadoMesa;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,14 +17,14 @@ public interface MesaRepository extends JpaRepository<Mesa, Long> {
     // Verificar si existe una mesa con un número específico
     boolean existsByNumero(Integer numero);
 
-    // Buscar mesas por estado
-    List<Mesa> findByEstado(EstadoMesa estado);
+    // Buscar mesas por estado (ahora usa String)
+    List<Mesa> findByEstado(String estado);
 
-    // Buscar mesas disponibles
-    List<Mesa> findByEstadoOrderByNumeroAsc(EstadoMesa estado);
+    // Buscar mesas por estado ordenadas por número (nombre correcto del atributo)
+    List<Mesa> findByEstadoOrderByNumeroAsc(String estado);
 
-    // Contar mesas por estado
-    long countByEstado(EstadoMesa estado);
+    // Contar mesas por estado (ahora usa String)
+    long countByEstado(String estado);
 
     // Buscar mesas disponibles con capacidad mínima
     @Query("SELECT m FROM Mesa m WHERE m.estado = 'DISPONIBLE' AND m.capacidad >= :capacidad ORDER BY m.capacidad ASC")

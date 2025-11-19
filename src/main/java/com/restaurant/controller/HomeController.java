@@ -1,6 +1,5 @@
 package com.restaurant.controller;
 
-import com.restaurant.model.Mesa;
 import com.restaurant.service.ClienteService;
 import com.restaurant.service.MesaService;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +24,11 @@ public class HomeController {
     public String home(Model model, Authentication authentication) {
         // Estadísticas para el dashboard
         long totalClientes = clienteService.contarActivos();
-        long mesasDisponibles = mesaService.contarPorEstado(Mesa.EstadoMesa.DISPONIBLE);
-        long mesasOcupadas = mesaService.contarPorEstado(Mesa.EstadoMesa.OCUPADA);
-        long mesasReservadas = mesaService.contarPorEstado(Mesa.EstadoMesa.RESERVADA);
+
+        // ✅ CORRECCIÓN: Usar String en lugar de Mesa.EstadoMesa
+        long mesasDisponibles = mesaService.contarPorEstado("DISPONIBLE");
+        long mesasOcupadas = mesaService.contarPorEstado("OCUPADA");
+        long mesasReservadas = mesaService.contarPorEstado("RESERVADA");
 
         model.addAttribute("totalClientes", totalClientes);
         model.addAttribute("mesasDisponibles", mesasDisponibles);

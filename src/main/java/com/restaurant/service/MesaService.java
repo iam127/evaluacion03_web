@@ -22,12 +22,12 @@ public class MesaService {
 
     @Transactional(readOnly = true)
     public List<Mesa> listarPorEstado(String estado) {
-        return mesaRepository.findByEstadoOrderByNumeroMesaAsc(estado);
+        return mesaRepository.findByEstadoOrderByNumeroAsc(estado);
     }
 
     @Transactional(readOnly = true)
     public List<Mesa> listarDisponibles() {
-        return mesaRepository.findByEstadoOrderByNumeroMesaAsc("DISPONIBLE");
+        return mesaRepository.findByEstadoOrderByNumeroAsc("DISPONIBLE");
     }
 
     @Transactional(readOnly = true)
@@ -63,5 +63,38 @@ public class MesaService {
     @Transactional(readOnly = true)
     public long contarReservadas() {
         return mesaRepository.countByEstado("RESERVADA");
+    }
+
+    // Métodos adicionales para cambiar estado de mesas
+    @Transactional
+    public void ocuparMesa(Long id) {
+        Mesa mesa = buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+        mesa.setEstado("OCUPADA");
+        mesaRepository.save(mesa);
+    }
+
+    @Transactional
+    public void liberarMesa(Long id) {
+        Mesa mesa = buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+        mesa.setEstado("DISPONIBLE");
+        mesaRepository.save(mesa);
+    }
+
+    @Transactional
+    public void reservarMesa(Long id) {
+        Mesa mesa = buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+        mesa.setEstado("RESERVADA");
+        mesaRepository.save(mesa);
+    }
+
+    @Transactional
+    public void cambiarEstado(Long id, String nuevoEstado) {
+        Mesa mesa = buscarPorId(id)
+                .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+        mesa.setEstado(nuevoEstado);
+        mesaRepository.save(mesa);
     }
 }
