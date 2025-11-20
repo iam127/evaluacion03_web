@@ -32,14 +32,14 @@
                     <form th:action="@{/clientes}" method="get" class="row g-3">
                         <div class="col-md-10">
                             <div class="input-group input-group-lg">
-                                    <span class="input-group-text bg-white">
-                                        <i class="bi bi-search"></i>
-                                    </span>
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
                                 <input type="text"
                                        class="form-control border-start-0"
                                        name="buscar"
                                        th:value="${buscar}"
-                                       placeholder="Buscar por DNI, nombres o apellidos...">
+                                       placeholder="Buscar por DNI, nombre o apellido...">
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -72,10 +72,10 @@
                             <tr>
                                 <th class="ps-4">#</th>
                                 <th>DNI</th>
-                                <th>Nombres</th>
-                                <th>Apellidos</th>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
                                 <th>Teléfono</th>
-                                <th>Correo</th>
+                                <th>Email</th>
                                 <th>Estado</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
@@ -93,25 +93,25 @@
                                 <td>
                                     <span class="badge bg-secondary" th:text="${cliente.dni}">12345678</span>
                                 </td>
-                                <td th:text="${cliente.nombres}">Juan</td>
-                                <td th:text="${cliente.apellidos}">Pérez García</td>
+                                <td th:text="${cliente.nombre}">Juan</td>
+                                <td th:text="${cliente.apellido}">Pérez García</td>
                                 <td>
                                     <i class="bi bi-telephone text-muted me-1"></i>
                                     <span th:text="${cliente.telefono}">987654321</span>
                                 </td>
                                 <td>
                                     <i class="bi bi-envelope text-muted me-1"></i>
-                                    <span th:text="${cliente.correo ?: 'No registrado'}">email@example.com</span>
+                                    <span th:text="${cliente.email ?: 'No registrado'}">email@example.com</span>
                                 </td>
                                 <td>
-                                            <span th:if="${cliente.estado}" class="badge bg-success">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                Activo
-                                            </span>
+                                    <span th:if="${cliente.estado}" class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Activo
+                                    </span>
                                     <span th:unless="${cliente.estado}" class="badge bg-danger">
-                                                <i class="bi bi-x-circle me-1"></i>
-                                                Inactivo
-                                            </span>
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Inactivo
+                                    </span>
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
