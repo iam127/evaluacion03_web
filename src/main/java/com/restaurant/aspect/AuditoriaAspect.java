@@ -11,6 +11,8 @@ import org.aspectj.lang.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +27,6 @@ public class AuditoriaAspect {
 
     /**
      * Auditar operaciones de guardado en ClienteService
-     * IMPORTANTE: Solo intercepta métodos específicos del service, no todo
      */
     @AfterReturning(
             pointcut = "execution(* com.restaurant.service.ClienteService.guardar(..))",
@@ -128,42 +129,58 @@ public class AuditoriaAspect {
     }
 
     /**
-     * Método auxiliar para registrar en bitácora
-     * CORREGIDO: Evita consultas durante la autenticación
+     * ✅ SOLUCIÓN: Método auxiliar con transacción independiente
+     * que NO causa dependencias circulares durante la autenticación
      */
-    private void registrarBitacora(String accion, String entidad, Long idEntidad) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void registrarBitacora(String accion, String entidad, Long idEntidad) {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-            // Verificar que el usuario está autenticado Y que no es anónimo
-            if (auth != null && auth.isAuthenticated()
-                    && !"anonymousUser".equals(auth.getPrincipal())
-                    && auth.getName() != null) {
-
-                String nombreUsuario = auth.getName();
-
-                // IMPORTANTE: Usar una transacción separada para evitar problemas
-                try {
-                    Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario).orElse(null);
-
-                    if (usuario != null) {
-                        Bitacora bitacora = new Bitacora();
-                        bitacora.setUsuario(usuario);
-                        bitacora.setAccion(accion);
-                        bitacora.setEntidad(entidad);
-                        bitacora.setIdEntidad(idEntidad);
-                        bitacora.setFechaHora(LocalDateTime.now());
-
-                        bitacoraRepository.save(bitacora);
-                        log.debug("Auditoría registrada: {} - {}", nombreUsuario, accion);
-                    }
-                } catch (Exception e) {
-                    // Solo log, no lanzar excepción para no afectar la operación principal
-                    log.warn("No se pudo registrar auditoría: {}", e.getMessage());
-                }
+            // ✅ CRÍTICO: Verificaciones para evitar ciclos infinitos
+            if (auth == null || !auth.isAuthenticated()) {
+                log.debug("No hay autenticación activa, saltando auditoría");
+                return;
             }
+
+            // ✅ Evitar auditar durante el proceso de autenticación
+            if ("anonymousUser".equals(auth.getPrincipal())) {
+                log.debug("Usuario anónimo, saltando auditoría");
+                return;
+            }
+
+            // ✅ Evitar auditar si el principal no es un String (aún no está completamente autenticado)
+            if (!(auth.getPrincipal() instanceof String)) {
+                log.debug("Autenticación en progreso, saltando auditoría");
+                return;
+            }
+
+            String nombreUsuario = auth.getName();
+            if (nombreUsuario == null || nombreUsuario.isBlank()) {
+                log.debug("Nombre de usuario vacío, saltando auditoría");
+                return;
+            }
+
+            // ✅ Buscar usuario SIN disparar proxies adicionales
+            Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario).orElse(null);
+
+            if (usuario != null) {
+                Bitacora bitacora = new Bitacora();
+                bitacora.setUsuario(usuario);
+                bitacora.setAccion(accion);
+                bitacora.setEntidad(entidad);
+                bitacora.setIdEntidad(idEntidad);
+                bitacora.setFechaHora(LocalDateTime.now());
+
+                bitacoraRepository.save(bitacora);
+                log.debug("✅ Auditoría registrada: {} - {}", nombreUsuario, accion);
+            } else {
+                log.warn("Usuario no encontrado para auditoría: {}", nombreUsuario);
+            }
+
         } catch (Exception e) {
-            log.error("Error al registrar en bitácora", e);
+            // ✅ IMPORTANTE: Solo log, NO lanzar excepción
+            log.error("Error al registrar auditoría (no crítico): {}", e.getMessage());
         }
     }
 }

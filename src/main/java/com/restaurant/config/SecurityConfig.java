@@ -1,71 +1,25 @@
 package com.restaurant.config;
 
+import com.restaurant.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import com.restaurant.model.Usuario;
-import com.restaurant.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UsuarioRepository usuarioRepository;
+    private final CustomUserDetailsService userDetailsService;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                        .requestMatchers("/login", "/error").permitAll()
-                        .requestMatchers("/clientes/**").hasAnyRole("ADMIN", "MOZO")
-                        .requestMatchers("/mesas/**").hasAnyRole("ADMIN", "MOZO")
-                        .anyRequest().authenticated()
-                )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/login?error=true")
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/login?logout=true")
-                        .permitAll()
-                )
-                .exceptionHandling(exception -> exception
-                        .accessDeniedPage("/error")
-                );
-
-        return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> {
-            Usuario usuario = usuarioRepository.findByNombreUsuario(username)
-                    .orElseThrow(() -> new UsernameNotFoundException(
-                            "Usuario no encontrado: " + username));
-
-            return User.builder()
-                    .username(usuario.getNombreUsuario())
-                    .password(usuario.getContrasena())
-                    .roles(usuario.getRol().replace("ROLE_", ""))
-                    .disabled(!usuario.getEstado())
-                    .build();
-        };
+    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
     }
 
     @Bean
@@ -74,8 +28,43 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authenticationProvider(authenticationProvider())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/setup/**").permitAll()  // ✅ AGREGADO /setup/**
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/mesero/**").hasRole("MESERO")
+                        .requestMatchers("/clientes/**", "/mesas/**").hasAnyRole("ADMIN", "MESERO")  // ✅ AGREGADO
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/", true)  // ✅ CAMBIADO de /dashboard a /
+                        .failureUrl("/login?error=true")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout=true")
+                        .permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .accessDeniedPage("/error/403")
+                );
+
+        return http.build();
     }
 }
